@@ -61,14 +61,7 @@ Foreman::Plugin.register :katello do
          :sync_plans,
          :caption => N_('Sync Plans'),
          :url_hash => {:controller => 'katello/sync_plans',
-                       :action => 'index'},
-         :engine => Katello::Engine
-
-    menu :top_menu,
-         :sync_schedules,
-         :caption => N_('Sync Schedules'),
-         :url_hash => {:controller => 'katello/sync_schedules',
-                       :action => 'index'},
+                       :action => 'all'},
          :engine => Katello::Engine
 
     divider :top_menu, :parent => :content

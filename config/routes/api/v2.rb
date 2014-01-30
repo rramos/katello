@@ -29,6 +29,10 @@ Katello::Engine.routes.draw do
         end
       end
 
+      api_resources :gpg_keys, :only => [:index, :show, :create, :update, :destroy] do
+        post :content, :on => :member
+      end
+
       api_resources :organizations, :only => [:index, :show, :update, :create, :destroy] do
         api_resources :environments, :only => [:index, :show, :create, :update, :destroy] do
           collection do
@@ -96,7 +100,13 @@ Katello::Engine.routes.draw do
 
       api_resources :organizations do
         api_resources :products, :only => [:index]
-        api_resources :sync_plans, :only => [:index, :create]
+        api_resources :sync_plans do
+          member do
+            get :available_products
+            put :add_products
+            put :remove_products
+          end
+        end
         api_resources :tasks, :only => [:index, :show]
         api_resources :providers, :only => [:index], :constraints => {:organization_id => /[^\/]*/}
         scope :constraints => Katello::RegisterWithActivationKeyContraint.new do
@@ -110,7 +120,7 @@ Katello::Engine.routes.draw do
         resource :uebercert, :only => [:show]
 
         api_resources :activation_keys, :only => [:index, :create]
-        api_resources :gpg_keys, :only => [:index, :create]
+        api_resources :gpg_keys, :only => [:index]
 
         match '/default_info/:informable_type' => 'organization_default_info#create', :via => :post, :as => :create_default_info
         match '/default_info/:informable_type/*keyname' => 'organization_default_info#destroy', :via => :delete, :as => :destroy_default_info
@@ -248,6 +258,11 @@ Katello::Engine.routes.draw do
       end
 
       api_resources :repositories, :only => [:index, :create, :show, :update, :destroy], :constraints => { :id => /[0-9a-zA-Z\-_.]*/ } do
+        collection do
+          post :sync_complete
+          match '/bulk/destroy' => 'repositories_bulk_actions#destroy_repositories', :via => :put
+          match '/bulk/sync' => 'repositories_bulk_actions#sync_repositories', :via => :post
+        end
         api_resources :sync, :only => [:index] do
           delete :index, :on => :collection, :action => :cancel
         end
@@ -264,9 +279,6 @@ Katello::Engine.routes.draw do
           get :package_group_categories
           get :gpg_key_content
           post :sync
-        end
-        collection do
-          post :sync_complete
         end
       end
 
@@ -286,11 +298,6 @@ Katello::Engine.routes.draw do
         end
       end
 
-      api_resources :gpg_keys, :only => [:index, :create, :show, :update, :destroy] do
-        get :content, :on => :member
-        post :content, :on => :member
-      end
-
       api_resources :activation_keys, :only => [:destroy, :show, :update] do
         member do
           api_attachable_resources :system_groups, :controller => :activation_keys, :resource_name => :system_groups
@@ -299,8 +306,6 @@ Katello::Engine.routes.draw do
       end
 
       api_resources :products, :only => [:index, :show, :update, :destroy, :create] do
-        post :sync_plan, :on => :member, :action => :set_sync_plan
-        delete :sync_plan, :on => :member, :action => :remove_sync_plan
         api_resources :repositories, :only => [:create, :index]
         get :repositories, :on => :member
         api_resources :sync, :only => [:index, :create] do
@@ -309,6 +314,12 @@ Katello::Engine.routes.draw do
         api_resources :repository_sets, :only => [:index] do
           put :enable, :on => :member
           put :disable, :on => :member
+        end
+
+        collection do
+          match '/bulk/destroy' => 'products_bulk_actions#destroy_products', :via => :put
+          match '/bulk/sync' => 'products_bulk_actions#sync_products', :via => :put
+          match '/bulk/sync_plan' => 'products_bulk_actions#update_sync_plans', :via => :put
         end
       end
 

@@ -23,6 +23,7 @@ describe('Controller: ProductDetailsInfoController', function() {
         var $controller = $injector.get('$controller'),
             $q = $injector.get('$q'),
             Product = $injector.get('MockResource').$new(),
+            SyncPlan = $injector.get('MockResource').$new();
             GPGKey = $injector.get('MockResource').$new();
 
         $scope = $injector.get('$rootScope').$new();
@@ -39,6 +40,7 @@ describe('Controller: ProductDetailsInfoController', function() {
             $q: $q,
             gettext: gettext,
             Product: Product,
+            SyncPlan: SyncPlan,
             GPGKey: GPGKey,
             MenuExpander: MenuExpander
         });
@@ -85,4 +87,12 @@ describe('Controller: ProductDetailsInfoController', function() {
         expect($scope.errorMessages.length).toBe(1);
     });
 
+    it('provides a way to sync a product', function() {
+        $scope.product.$sync = function () {};
+        spyOn($scope.product, '$sync');
+
+        $scope.syncProduct();
+
+        expect($scope.product.$sync).toHaveBeenCalled();
+    });
 });
