@@ -11,12 +11,16 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 module Katello
+
+  require "securerandom"
+
 class ProductsController < Katello::ApplicationController
   respond_to :html, :js
 
   before_filter :find_product, :only => [:edit, :update, :destroy, :refresh_content, :disable_content]
-  before_filter :find_provider, :only => [:new, :create, :default_label, :edit, :update, :destroy,
+  before_filter :find_provider, :only => [:new, :default_label, :edit, :update, :destroy,
                                           :refresh_content, :disable_content]
+  before_filter :find_or_create_provider, :only => [:create]
   before_filter :authorize
 
   def rules
@@ -148,6 +152,12 @@ class ProductsController < Katello::ApplicationController
   def find_provider
     @provider = @product.provider if @product  #don't trust the provider_id coming in if we don't need it
     @provider ||= Provider.find(params[:provider_id])
+  end
+
+  def find_or_create_provider
+    find_provider
+    @provider ||= Provider.create!({:name => SecureRandom.uuid, :description => nil, :organization => current_organization,
+                                    :provider_type => Provider::ANONYMOUS, :repository_url => nil})
   end
 
   def find_product
